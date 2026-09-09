@@ -1,0 +1,29 @@
+# Datasets (large, not meant for version control)
+data/tcir/
+data/ibtracs/
+data/era5/
+data/processed/
+data/models/
+
+# Database
+database/*.db
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Node / frontend
+frontend/node_modules/
+frontend/dist/
+
+# Env files
+.env
+!.env.example
+frontend/.env
+!frontend/.env.example
+
+# OS/editor
+.DS_Store
+Thumbs.db

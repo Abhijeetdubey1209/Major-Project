@@ -1,0 +1,56 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #07111f;
+  --color-panel: #101d30;
+  --color-panel-2: #142238;
+  --color-border: #1f2f47;
+  --color-accent: #22d3ee;
+  --color-accent-2: #38bdf8;
+  --color-warn: #f59e0b;
+  --color-danger: #f87171;
+  --color-text: #e5edf5;
+  --color-text-dim: #8ea3bd;
+  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 999px;
+}
+
+.leaflet-container {
+  background: var(--color-bg);
+}
+
+/* Standard OSM tiles inverted to a dark theme (no API key required) */
+.map-dark .leaflet-tile-pane {
+  filter: invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.9) saturate(0.7);
+}
+.map-dark .leaflet-popup-content-wrapper,
+.map-dark .leaflet-popup-tip {
+  background: var(--color-panel);
+  color: var(--color-text);
+}
+
