@@ -6,6 +6,9 @@ supervised learning: one model per lead time, trained on real (current_state -> 
 future_position) pairs mined from every historical storm's track, evaluated on storms
 never seen during training, with a real measured error in kilometers.
 
+Compares three algorithms (HistGradientBoosting, RandomForest, XGBoost) and uses
+the best performer based on mean test error across all horizons.
+
 Predicts bearing (as sin/cos, to handle the 0/360 wraparound correctly for a plain
 regressor) and distance separately, then reconstructs the destination point with the
 same great-circle math used elsewhere in the app (app.utils.geo.destination_point).
@@ -13,7 +16,7 @@ same great-circle math used elsewhere in the app (app.utils.geo.destination_poin
 from __future__ import annotations
 
 import json
-import math
+import math 
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -23,8 +26,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import joblib
 import numpy as np
 import pandas as pd
-from sklearn.ensemble import HistGradientBoostingRegressor
+from sklearn.ensemble import HistGradientBoostingRegressor, RandomForestRegressor
+from sklearn.impute import SimpleImputer
 from sklearn.model_selection import GroupShuffleSplit
+from xgboost import XGBRegressor
 
 from app.config import DATA_ROOT
 from app.database import engine
@@ -144,40 +149,115 @@ def build_horizon_dataset(df: pd.DataFrame, horizon_hours: int) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def train_horizon(dataset: pd.DataFrame, horizon_hours: int) -> tuple[dict, dict]:
+def train_horizon(dataset: pd.DataFrame, horizon_hours: int) -> tuple[dict, dict, dict]:
     X = dataset[FEATURE_COLUMNS]
     groups = dataset["sid"]
+
+    # Handle NaN and infinity values (RandomForest/XGBoost can't handle these)
+    X = X.apply(pd.to_numeric, errors='coerce')
+    X = X.replace([np.inf, -np.inf], np.nan)
+    if X.isna().sum().sum() > 0:
+        imputer = SimpleImputer(strategy='median')
+        X = pd.DataFrame(
+            imputer.fit_transform(X),
+            columns=X.columns,
+            index=X.index
+        )
 
     splitter = GroupShuffleSplit(n_splits=1, test_size=0.2, random_state=42)
     train_idx, test_idx = next(splitter.split(X, groups=groups))
 
-    models = {}
-    for target in ("target_sin", "target_cos", "target_distance_km"):
-        model = HistGradientBoostingRegressor(max_iter=200, learning_rate=0.08, max_depth=6, random_state=42)
-        model.fit(X.iloc[train_idx], dataset[target].iloc[train_idx])
-        models[target] = model
-
-    # Evaluate: reconstruct predicted lat/lon, measure real haversine error in km.
-    test = dataset.iloc[test_idx]
-    pred_sin = models["target_sin"].predict(X.iloc[test_idx])
-    pred_cos = models["target_cos"].predict(X.iloc[test_idx])
-    pred_distance = np.clip(models["target_distance_km"].predict(X.iloc[test_idx]), 0, None)
-    pred_bearing = (np.degrees(np.arctan2(pred_sin, pred_cos))) % 360.0
-
-    errors_km = []
-    for k, (_, row) in enumerate(test.iterrows()):
-        pred_lat, pred_lon = destination_point(row.latitude, row.longitude, pred_bearing[k], pred_distance[k])
-        errors_km.append(haversine_km(pred_lat, pred_lon, row.actual_future_lat, row.actual_future_lon))
-    errors_km = np.array(errors_km)
-
-    metrics = {
-        "training_samples": int(len(train_idx)),
-        "test_samples": int(len(test_idx)),
-        "mean_error_km": round(float(errors_km.mean()), 1),
-        "median_error_km": round(float(np.median(errors_km)), 1),
-        "p90_error_km": round(float(np.percentile(errors_km, 90)), 1),
+    # Define model candidates
+    model_configs = {
+        "HistGradientBoosting": HistGradientBoostingRegressor(
+            max_iter=200, learning_rate=0.08, max_depth=6, random_state=42
+        ),
+        "RandomForest": RandomForestRegressor(
+            n_estimators=150, max_depth=12, min_samples_split=5,
+            random_state=42, n_jobs=-1
+        ),
+        "XGBoost": XGBRegressor(
+            n_estimators=200, learning_rate=0.08, max_depth=6,
+            random_state=42, n_jobs=-1, verbosity=0
+        ),
     }
-    return models, metrics
+
+    comparison = {}
+
+    for model_name, base_model in model_configs.items():
+        models = {}
+        for target in ("target_sin", "target_cos", "target_distance_km"):
+            # Clone the base model for each target
+            if model_name == "HistGradientBoosting":
+                model = HistGradientBoostingRegressor(
+                    max_iter=200, learning_rate=0.08, max_depth=6, random_state=42
+                )
+            elif model_name == "RandomForest":
+                model = RandomForestRegressor(
+                    n_estimators=150, max_depth=12, min_samples_split=5,
+                    random_state=42, n_jobs=-1
+                )
+            else:  # XGBoost
+                model = XGBRegressor(
+                    n_estimators=200, learning_rate=0.08, max_depth=6,
+                    random_state=42, n_jobs=-1, verbosity=0
+                )
+
+            model.fit(X.iloc[train_idx], dataset[target].iloc[train_idx])
+            models[target] = model
+
+        # Evaluate: reconstruct predicted lat/lon, measure real haversine error in km.
+        test = dataset.iloc[test_idx]
+        pred_sin = models["target_sin"].predict(X.iloc[test_idx])
+        pred_cos = models["target_cos"].predict(X.iloc[test_idx])
+        pred_distance = np.clip(models["target_distance_km"].predict(X.iloc[test_idx]), 0, None)
+        pred_bearing = (np.degrees(np.arctan2(pred_sin, pred_cos))) % 360.0
+
+        errors_km = []
+        for k, (_, row) in enumerate(test.iterrows()):
+            pred_lat, pred_lon = destination_point(row.latitude, row.longitude, pred_bearing[k], pred_distance[k])
+            errors_km.append(haversine_km(pred_lat, pred_lon, row.actual_future_lat, row.actual_future_lon))
+        errors_km = np.array(errors_km)
+
+        metrics = {
+            "training_samples": int(len(train_idx)),
+            "test_samples": int(len(test_idx)),
+            "mean_error_km": round(float(errors_km.mean()), 1),
+            "median_error_km": round(float(np.median(errors_km)), 1),
+            "p90_error_km": round(float(np.percentile(errors_km, 90)), 1),
+        }
+
+        comparison[model_name] = metrics
+
+        if model_name == "HistGradientBoosting":
+            best_models = models  # Start with first as default
+
+    # Select best based on mean error
+    best_model_name = min(comparison.keys(), key=lambda k: comparison[k]["mean_error_km"])
+
+    # Re-train best model if it wasn't the last one
+    if best_model_name != list(model_configs.keys())[-1]:
+        best_models = {}
+        for target in ("target_sin", "target_cos", "target_distance_km"):
+            if best_model_name == "HistGradientBoosting":
+                model = HistGradientBoostingRegressor(
+                    max_iter=200, learning_rate=0.08, max_depth=6, random_state=42
+                )
+            elif best_model_name == "RandomForest":
+                model = RandomForestRegressor(
+                    n_estimators=150, max_depth=12, min_samples_split=5,
+                    random_state=42, n_jobs=-1
+                )
+            else:  # XGBoost
+                model = XGBRegressor(
+                    n_estimators=200, learning_rate=0.08, max_depth=6,
+                    random_state=42, n_jobs=-1, verbosity=0
+                )
+            model.fit(X.iloc[train_idx], dataset[target].iloc[train_idx])
+            best_models[target] = model
+
+    best_metrics = comparison[best_model_name]
+    return best_models, best_metrics, comparison
 
 
 def train() -> dict:
@@ -186,27 +266,60 @@ def train() -> dict:
 
     bundle = {}
     all_metrics = {}
+    all_comparisons = {}
+    best_model_names = []
+
+    print("\n" + "="*70)
+    print("TRAINING AND COMPARING MODELS FOR TRACK FORECASTING")
+    print("="*70)
 
     for horizon in HORIZONS_HOURS:
-        print(f"\nBuilding dataset for {horizon}h horizon...")
+        print(f"\n{'='*70}")
+        print(f"HORIZON: {horizon}h")
+        print(f"{'='*70}")
+        print(f"Building dataset for {horizon}h horizon...")
         dataset = build_horizon_dataset(df, horizon)
-        print(f"  {len(dataset)} training pairs from {dataset['sid'].nunique()} storms")
+        print(f"{len(dataset)} training pairs from {dataset['sid'].nunique()} storms\n")
 
-        models, metrics = train_horizon(dataset, horizon)
+        models, metrics, comparison = train_horizon(dataset, horizon)
+
+        # Print comparison for this horizon
+        for model_name, model_metrics in comparison.items():
+            print(f"[{model_name}] Mean: {model_metrics['mean_error_km']} km, "
+                  f"Median: {model_metrics['median_error_km']} km, "
+                  f"P90: {model_metrics['p90_error_km']} km")
+
+        best_name = min(comparison.keys(), key=lambda k: comparison[k]["mean_error_km"])
+        best_model_names.append(best_name)
+        print(f"\n✓ Best for {horizon}h: {best_name} (Mean: {metrics['mean_error_km']} km)")
+
         bundle[horizon] = models
         all_metrics[str(horizon)] = metrics
-        print(f"  Mean error: {metrics['mean_error_km']} km, median: {metrics['median_error_km']} km")
+        all_comparisons[str(horizon)] = comparison
+
+    # Determine overall best model type
+    from collections import Counter
+    model_counter = Counter(best_model_names)
+    overall_best = model_counter.most_common(1)[0][0]
+
+    print("\n" + "="*70)
+    print(f"OVERALL BEST MODEL: {overall_best}")
+    print(f"Selected for: {sum(1 for m in best_model_names if m == overall_best)}/{len(HORIZONS_HOURS)} horizons")
+    print("="*70 + "\n")
 
     MODEL_DIR.mkdir(parents=True, exist_ok=True)
     joblib.dump(bundle, MODEL_PATH)
 
     metadata = {
-        "model_type": "HistGradientBoostingRegressor (bearing sin/cos + distance, per horizon)",
+        "model_type": f"{overall_best} (bearing sin/cos + distance, per horizon)",
         "horizons_hours": HORIZONS_HOURS,
         "feature_columns": FEATURE_COLUMNS,
         "latitude_range": [float(df["latitude"].min()), float(df["latitude"].max())],
         "longitude_range": [float(df["longitude"].min()), float(df["longitude"].max())],
         "metrics_by_horizon": all_metrics,
+        "model_comparison_by_horizon": all_comparisons,
+        "best_model_per_horizon": {str(h): name for h, name in zip(HORIZONS_HOURS, best_model_names)},
+        "overall_best_model": overall_best,
         "trained_at": datetime.now(timezone.utc).isoformat(),
     }
     METADATA_PATH.write_text(json.dumps(metadata, indent=2))
