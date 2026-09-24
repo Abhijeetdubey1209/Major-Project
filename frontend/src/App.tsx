@@ -6,7 +6,7 @@ import { CycloneDetail } from '@/pages/CycloneDetail'
 import { GlobalMap } from '@/pages/GlobalMap'
 import { Simulator } from '@/pages/Simulator'
 import { Satellite } from '@/pages/Satellite'
-import { Predict } from '@/pages/Predict'
+// import { Predict } from '@/pages/Predict' // Hidden from UI
 import { DataSources } from '@/pages/DataSources'
 
 function App() {
@@ -15,7 +15,7 @@ function App() {
       <Route
         path="/"
         element={
-          <AppLayout title="Dashboard" subtitle="Historical Tracking • Satellite Intelligence • Risk Estimation">
+          <AppLayout title="Dashboard" subtitle="Historical Tracking • Satellite Intelligence • Forecasting Models">
             <Dashboard />
           </AppLayout>
         }
@@ -60,14 +60,15 @@ function App() {
           </AppLayout>
         }
       />
-      <Route
+      {/* Risk Estimation route hidden from UI but kept for API access */}
+      {/* <Route
         path="/predict"
         element={
           <AppLayout title="Risk Estimation" subtitle="Severity scoring plus a trained track forecast, from a storm's current position and motion">
             <Predict />
           </AppLayout>
         }
-      />
+      /> */}
       <Route
         path="/data"
         element={

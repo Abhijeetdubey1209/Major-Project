@@ -70,8 +70,9 @@ cd backend
 pip install -r requirements.txt
 python scripts/build_database.py             # builds database/cyclone.db from IBTrACS
 python scripts/extract_tcir_features.py      # one-time: extracts per-sample image features (~1-2 min)
-python scripts/train_intensity_model.py      # trains the Vmax regressor from those features
-python scripts/train_track_forecast_model.py # trains the 12h/24h/48h track forecaster
+python scripts/train_intensity_model.py      # compares 3 algorithms, trains best Vmax regressor
+python scripts/train_track_forecast_model.py # compares 3 algorithms, trains best track forecaster
+python scripts/compare_models.py             # (optional) display comparison results
 uvicorn app.main:app --reload --port 8050
 ```
 

@@ -1,7 +1,6 @@
 import {
   Activity,
   Database,
-  Gauge,
   Globe,
   LayoutDashboard,
   Map as MapIcon,
@@ -14,12 +13,13 @@ import { cn } from '@/lib/utils'
 
 // '/satellite' (Satellite Explorer) is intentionally left off the nav but still routed
 // in App.tsx -- the page itself is untouched, just not linked from the sidebar.
+// '/predict' (Risk Estimation) is also hidden from nav but backend code remains intact
 const NAV_ITEMS = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
   { to: '/cyclones', label: 'Cyclone Explorer', icon: MapIcon },
   { to: '/map', label: 'Global Map', icon: Globe },
   { to: '/simulator', label: 'Cyclone Simulator', icon: Zap },
-  { to: '/predict', label: 'Risk Estimation', icon: Gauge },
+  // { to: '/predict', label: 'Risk Estimation', icon: Gauge }, // Hidden from UI
   { to: '/data', label: 'Data Sources', icon: Database },
 ]
 
