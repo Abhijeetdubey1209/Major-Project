@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: cyclone-backend
+    env: python
+    region: oregon
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12
+      - key: PYTHONUNBUFFERED
+        value: 1
+      - key: FRONTEND_ORIGINS
+        value: http://localhost:5173,http://127.0.0.1:5173,https://major-project-three-sage.vercel.app
