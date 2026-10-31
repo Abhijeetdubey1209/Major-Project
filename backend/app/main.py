@@ -1,12 +1,15 @@
 import os
+import subprocess
+import sys
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import analytics, cyclones, era5, health, predict, tcir
-from app.config import DATABASE_PATH
+from app.config import BACKEND_DIR, DATABASE_PATH
 from app.services.era5_service import era5_service
 from app.services.tcir_service import tcir_service
 
@@ -18,8 +21,11 @@ async def lifespan(app: FastAPI):
     # Build SQLite database from IBTrACS CSV if it doesn't exist yet
     if not DATABASE_PATH.exists():
         print("Database not found. Building from IBTrACS CSV...")
-        from scripts.build_database import build
-        build()
+        subprocess.run(
+            [sys.executable, "scripts/build_database.py"],
+            check=True,
+            cwd=str(BACKEND_DIR),
+        )
 
     era5_service.load()
     tcir_service.load()
