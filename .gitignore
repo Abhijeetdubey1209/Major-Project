@@ -1,6 +1,5 @@
 # Datasets (large, not meant for version control)
 data/tcir/
-data/ibtracs/
 data/era5/
 data/processed/
 data/models/

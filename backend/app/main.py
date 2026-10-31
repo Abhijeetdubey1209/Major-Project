@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import analytics, cyclones, era5, health, predict, tcir
+from app.config import DATABASE_PATH
 from app.services.era5_service import era5_service
 from app.services.tcir_service import tcir_service
 
@@ -14,6 +15,12 @@ load_dotenv()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Build SQLite database from IBTrACS CSV if it doesn't exist yet
+    if not DATABASE_PATH.exists():
+        print("Database not found. Building from IBTrACS CSV...")
+        from scripts.build_database import build
+        build()
+
     era5_service.load()
     tcir_service.load()
     yield
