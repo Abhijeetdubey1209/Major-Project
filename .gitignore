@@ -2,7 +2,6 @@
 data/tcir/
 data/era5/
 data/processed/
-data/models/
 
 # Database
 database/*.db

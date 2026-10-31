@@ -1,0 +1,131 @@
+{
+  "model_type": "HistGradientBoosting (bearing sin/cos + distance, per horizon)",
+  "horizons_hours": [
+    12,
+    24,
+    48
+  ],
+  "feature_columns": [
+    "latitude",
+    "longitude",
+    "storm_speed",
+    "sin_direction",
+    "cos_direction",
+    "wind_speed",
+    "pressure",
+    "sin_month",
+    "cos_month",
+    "recent_bearing_change",
+    "recent_speed_change",
+    "has_recent_trend"
+  ],
+  "latitude_range": [
+    0.7,
+    34.3
+  ],
+  "longitude_range": [
+    41.80000000000001,
+    100.0
+  ],
+  "metrics_by_horizon": {
+    "12": {
+      "training_samples": 41464,
+      "test_samples": 10862,
+      "mean_error_km": 38.6,
+      "median_error_km": 29.7,
+      "p90_error_km": 76.5
+    },
+    "24": {
+      "training_samples": 33421,
+      "test_samples": 13663,
+      "mean_error_km": 105.9,
+      "median_error_km": 87.6,
+      "p90_error_km": 203.9
+    },
+    "48": {
+      "training_samples": 26138,
+      "test_samples": 10958,
+      "mean_error_km": 258.9,
+      "median_error_km": 226.4,
+      "p90_error_km": 472.4
+    }
+  },
+  "model_comparison_by_horizon": {
+    "12": {
+      "HistGradientBoosting": {
+        "training_samples": 41464,
+        "test_samples": 10862,
+        "mean_error_km": 38.6,
+        "median_error_km": 29.7,
+        "p90_error_km": 76.5
+      },
+      "RandomForest": {
+        "training_samples": 41464,
+        "test_samples": 10862,
+        "mean_error_km": 39.5,
+        "median_error_km": 29.8,
+        "p90_error_km": 79.8
+      },
+      "XGBoost": {
+        "training_samples": 41464,
+        "test_samples": 10862,
+        "mean_error_km": 38.7,
+        "median_error_km": 29.9,
+        "p90_error_km": 77.0
+      }
+    },
+    "24": {
+      "HistGradientBoosting": {
+        "training_samples": 33421,
+        "test_samples": 13663,
+        "mean_error_km": 105.9,
+        "median_error_km": 87.6,
+        "p90_error_km": 203.9
+      },
+      "RandomForest": {
+        "training_samples": 33421,
+        "test_samples": 13663,
+        "mean_error_km": 107.7,
+        "median_error_km": 88.9,
+        "p90_error_km": 207.4
+      },
+      "XGBoost": {
+        "training_samples": 33421,
+        "test_samples": 13663,
+        "mean_error_km": 106.2,
+        "median_error_km": 87.9,
+        "p90_error_km": 204.2
+      }
+    },
+    "48": {
+      "HistGradientBoosting": {
+        "training_samples": 26138,
+        "test_samples": 10958,
+        "mean_error_km": 259.5,
+        "median_error_km": 229.3,
+        "p90_error_km": 470.8
+      },
+      "RandomForest": {
+        "training_samples": 26138,
+        "test_samples": 10958,
+        "mean_error_km": 263.3,
+        "median_error_km": 231.3,
+        "p90_error_km": 482.2
+      },
+      "XGBoost": {
+        "training_samples": 26138,
+        "test_samples": 10958,
+        "mean_error_km": 258.9,
+        "median_error_km": 226.4,
+        "p90_error_km": 472.4
+      }
+    }
+  },
+  "best_model_per_horizon": {
+    "12": "HistGradientBoosting",
+    "24": "HistGradientBoosting",
+    "48": "XGBoost"
+  },
+  "overall_best_model": "HistGradientBoosting",
+  "trained_at": "2026-10-21T06:02:42.159836+00:00"
+}

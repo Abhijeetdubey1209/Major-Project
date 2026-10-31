@@ -1,0 +1,118 @@
+{
+  "model_type": "XGBoost",
+  "target": "Vmax (knots)",
+  "feature_columns": [
+    "lat",
+    "lon",
+    "dataset_CPAC",
+    "dataset_IO",
+    "dataset_SH",
+    "ir1_mean",
+    "ir1_std",
+    "ir1_min",
+    "ir1_max",
+    "ir1_p10",
+    "ir1_p50",
+    "ir1_p90",
+    "ir1_center_mean",
+    "ir1_center_min",
+    "ir1_center_max",
+    "ir1_center_minus_outer",
+    "ir1_gradient_mean",
+    "ir1_available",
+    "wv_mean",
+    "wv_std",
+    "wv_min",
+    "wv_max",
+    "wv_p10",
+    "wv_p50",
+    "wv_p90",
+    "wv_center_mean",
+    "wv_center_min",
+    "wv_center_max",
+    "wv_center_minus_outer",
+    "wv_gradient_mean",
+    "wv_available",
+    "vis_mean",
+    "vis_std",
+    "vis_min",
+    "vis_max",
+    "vis_p10",
+    "vis_p50",
+    "vis_p90",
+    "vis_center_mean",
+    "vis_center_min",
+    "vis_center_max",
+    "vis_center_minus_outer",
+    "vis_gradient_mean",
+    "vis_available",
+    "pmw_mean",
+    "pmw_std",
+    "pmw_min",
+    "pmw_max",
+    "pmw_p10",
+    "pmw_p50",
+    "pmw_p90",
+    "pmw_center_mean",
+    "pmw_center_min",
+    "pmw_center_max",
+    "pmw_center_minus_outer",
+    "pmw_gradient_mean",
+    "pmw_available"
+  ],
+  "training_samples": 14142,
+  "validation_samples": 4757,
+  "test_samples": 4219,
+  "total_samples": 23118,
+  "unique_cyclones": 424,
+  "validation_metrics": {
+    "mae": 12.753232646193954,
+    "rmse": 17.797520763039113,
+    "r2": 0.5737542822305518
+  },
+  "test_metrics": {
+    "mae": 12.55357580869846,
+    "rmse": 17.878142820987346,
+    "r2": 0.5166505725965281
+  },
+  "model_comparison": {
+    "HistGradientBoosting": {
+      "validation_metrics": {
+        "mae": 12.636053692351421,
+        "rmse": 17.48334557632202,
+        "r2": 0.5886702740038978
+      },
+      "test_metrics": {
+        "mae": 12.61193118254379,
+        "rmse": 17.98254611388537,
+        "r2": 0.5109888416260424
+      }
+    },
+    "RandomForest": {
+      "validation_metrics": {
+        "mae": 12.871320810844287,
+        "rmse": 17.569402272786053,
+        "r2": 0.5846110057568032
+      },
+      "test_metrics": {
+        "mae": 12.775693227026792,
+        "rmse": 18.14302529819441,
+        "r2": 0.5022218652316257
+      }
+    },
+    "XGBoost": {
+      "validation_metrics": {
+        "mae": 12.753232646193954,
+        "rmse": 17.797520763039113,
+        "r2": 0.5737542822305518
+      },
+      "test_metrics": {
+        "mae": 12.55357580869846,
+        "rmse": 17.878142820987346,
+        "r2": 0.5166505725965281
+      }
+    }
+  },
+  "best_model_selected_by": "minimum test MAE",
+  "trained_at": "2026-10-21T05:57:17.515524+00:00"
+}
